@@ -10,11 +10,11 @@
     href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2333B8C8'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%239CE5EC' stroke-width='2.5' stroke-dasharray='6 4'/%3E%3Crect x='14' y='21' width='36' height='22' rx='11' fill='%23F8C12C'/%3E%3Crect x='22' y='26' width='6' height='12' rx='3' fill='%2333B8C8'/%3E%3Crect x='36' y='26' width='6' height='12' rx='3' fill='%2333B8C8'/%3E%3Ccircle cx='24' cy='29' r='1.5' fill='%23FFFFFF'/%3E%3Ccircle cx='38' cy='29' r='1.5' fill='%23FFFFFF'/%3E%3C/svg%3E"
   />
 
-  <!-- Typography: Plus Jakarta Sans, Inter, JetBrains Mono -->
+  <!-- Typography: Google Sans & Google Sans Flex -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400..700&family=Google+Sans:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   />
 
@@ -36,9 +36,9 @@
             warmTint: '#9CE5EC',
           },
           fontFamily: {
-            display: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-            sans: ['"Inter"', 'system-ui', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
+            display: ['"Google Sans Flex"', '"Google Sans"', 'system-ui', 'sans-serif'],
+            sans: ['"Google Sans"', '"Google Sans Flex"', 'system-ui', 'sans-serif'],
+            mono: ['"Google Sans Flex"', '"Google Sans"', 'monospace'],
           },
         },
       },
@@ -57,19 +57,22 @@
   <style>
     html {
       scroll-behavior: smooth;
+      font-family: 'Google Sans', 'Google Sans Flex', system-ui, -apple-system, sans-serif;
+    }
+    body, button, input, select, textarea {
+      font-family: 'Google Sans', 'Google Sans Flex', system-ui, -apple-system, sans-serif;
     }
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
       color: #0b4757;
       background-color: #FFFFFF;
       -webkit-font-smoothing: antialiased;
     }
     h1, h2, h3, h4, .font-display {
-      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      font-family: 'Google Sans Flex', 'Google Sans', system-ui, sans-serif;
       letter-spacing: -0.02em;
     }
     .font-mono-id {
-      font-family: 'JetBrains Mono', monospace;
+      font-family: 'Google Sans Flex', 'Google Sans', system-ui, sans-serif;
     }
 
     /* Ultra-subtle Hero Dot Grid */
@@ -2098,6 +2101,340 @@ void main(void) {
       return [url];
     }
 
+    function CoverflowCarousel({
+      slides,
+      rotate = 44,
+      depth = 0.6,
+      perspective = 3,
+      falloff = 0.56,
+      fade = 0.1,
+      cardWidth = "clamp(200px, 26vw, 290px)",
+      gap = 0.08,
+      loop = true,
+      showCaption = true,
+      showPagination = true,
+      showNavigation = true,
+      label = "Public Item Feed Carousel",
+      className = "",
+      onSlideAction,
+    }) {
+      const count = slides.length;
+      const frameRef = useRef(null);
+      const cardRefs = useRef([]);
+      const posRef = useRef(0);
+      const targetRef = useRef(0);
+      const widthRef = useRef(0);
+      const rafRef = useRef(null);
+      const dragRef = useRef(null);
+      const [selected, setSelected] = useState(0);
+
+      const effectiveLoop = loop && count > 2;
+
+      const indexAt = useCallback(
+        (pos) => (count === 0 ? 0 : ((Math.round(pos) % count) + count) % count),
+        [count]
+      );
+
+      const paint = useCallback(() => {
+        const width = widthRef.current;
+        if (!width || count === 0) return;
+        const pitch = width * (1 + gap);
+        const pos = posRef.current;
+
+        cardRefs.current.slice(0, count).forEach((card, index) => {
+          if (!card) return;
+          let offset = index - pos;
+          if (effectiveLoop) {
+            offset = ((offset % count) + count) % count;
+            if (offset > count / 2) offset -= count;
+          }
+          const distance = Math.abs(offset);
+          const ramp = Math.pow(distance, falloff);
+          const tilt = Math.min(rotate * ramp, 82) * Math.sign(offset);
+
+          card.style.transform =
+            `translateX(calc(-50% + ${offset * pitch}px)) ` +
+            `translateZ(${-depth * width * ramp}px) rotateY(${-tilt}deg)`;
+
+          const edge = effectiveLoop ? Math.min(1, Math.max(0, count / 2 - distance)) : 1;
+          card.style.opacity = String(Math.max(0, 1 - fade * distance) * edge);
+          card.style.zIndex = String(100 - Math.round(distance));
+        });
+      }, [count, depth, effectiveLoop, fade, falloff, gap, rotate]);
+
+      const settle = useCallback(
+        (target) => {
+          if (count === 0) return;
+          if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+          targetRef.current = target;
+          setSelected(indexAt(target));
+
+          const step = () => {
+            const remaining = target - posRef.current;
+            if (Math.abs(remaining) < 0.0004) {
+              posRef.current = target;
+              paint();
+              rafRef.current = null;
+              return;
+            }
+            posRef.current += remaining * 0.16;
+            paint();
+            rafRef.current = requestAnimationFrame(step);
+          };
+          rafRef.current = requestAnimationFrame(step);
+        },
+        [count, indexAt, paint]
+      );
+
+      const clamp = useCallback(
+        (pos) => (effectiveLoop ? pos : Math.max(0, Math.min(Math.max(0, count - 1), pos))),
+        [count, effectiveLoop]
+      );
+
+      const goTo = useCallback(
+        (index) => {
+          if (count === 0) return;
+          const target = effectiveLoop
+            ? index + Math.round((targetRef.current - index) / count) * count
+            : index;
+          settle(clamp(target));
+        },
+        [clamp, count, effectiveLoop, settle]
+      );
+
+      const nudge = useCallback(
+        (by) => settle(clamp(Math.round(targetRef.current) + by)),
+        [clamp, settle]
+      );
+
+      useEffect(() => {
+        posRef.current = 0;
+        targetRef.current = 0;
+        setSelected(0);
+        const timer = requestAnimationFrame(() => paint());
+        return () => cancelAnimationFrame(timer);
+      }, [count, paint]);
+
+      const onPointerDown = (event) => {
+        if (event.target.closest("button")) return;
+        if (rafRef.current !== null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+        event.currentTarget.setPointerCapture(event.pointerId);
+        targetRef.current = posRef.current;
+        dragRef.current = {
+          id: event.pointerId,
+          x: event.clientX,
+          pos: posRef.current,
+          v: 0,
+          t: performance.now(),
+        };
+      };
+
+      const onPointerMove = (event) => {
+        const drag = dragRef.current;
+        if (!drag || drag.id !== event.pointerId) return;
+        const pitch = widthRef.current * (1 + gap);
+        if (!pitch) return;
+        const now = performance.now();
+        const previous = posRef.current;
+        posRef.current = clamp(drag.pos - (event.clientX - drag.x) / pitch);
+        drag.v = ((posRef.current - previous) / Math.max(now - drag.t, 1)) * 1000;
+        drag.t = now;
+        const index = indexAt(posRef.current);
+        if (index !== selected) setSelected(index);
+        paint();
+      };
+
+      const endDrag = (event) => {
+        const drag = dragRef.current;
+        if (!drag || drag.id !== event.pointerId) return;
+        dragRef.current = null;
+        const carried = Math.max(-2, Math.min(2, drag.v * 0.18));
+        settle(clamp(Math.round(posRef.current + carried)));
+      };
+
+      useEffect(() => {
+        const frame = frameRef.current;
+        if (!frame) return;
+        const measure = () => {
+          const card = cardRefs.current[0];
+          if (!card) return;
+          widthRef.current = card.offsetWidth;
+          paint();
+        };
+        measure();
+        const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+        if (observer) observer.observe(frame);
+        return () => observer && observer.disconnect();
+      }, [paint]);
+
+      useEffect(() => () => {
+        if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      }, []);
+
+      const active = slides[selected] || slides[0];
+
+      return (
+        <div
+          className={`w-full ${className}`}
+          style={{ "--cf-card": cardWidth }}
+          role="region"
+          aria-roledescription="carousel"
+          aria-label={label}
+        >
+          <div className="relative">
+            <div
+              ref={frameRef}
+              tabIndex={0}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  nudge(-1);
+                } else if (event.key === "ArrowRight") {
+                  event.preventDefault();
+                  nudge(1);
+                }
+              }}
+              className="cursor-grab overflow-hidden py-10 outline-none focus-visible:ring-2 focus-visible:ring-[#33B8C8] active:cursor-grabbing"
+              style={{
+                perspective: `calc(var(--cf-card) * ${perspective})`,
+                touchAction: "pan-y",
+              }}
+            >
+              <div
+                className="relative select-none"
+                style={{ height: "var(--cf-card)", transformStyle: "preserve-3d" }}
+              >
+                {slides.map((slide, index) => (
+                  <div
+                    key={slide.id || index}
+                    ref={(node) => { cardRefs.current[index] = node; }}
+                    role="group"
+                    aria-roledescription="slide"
+                    aria-label={`${index + 1} of ${count}`}
+                    onClick={() => {
+                      if (index !== selected) goTo(index);
+                      else if (onSlideAction && slide.item) onSlideAction(slide.item);
+                    }}
+                    className="absolute left-1/2 top-0 aspect-square overflow-hidden rounded-2xl border border-[#9CE5EC] bg-white shadow-xl will-change-transform cursor-pointer"
+                    style={{ width: "var(--cf-card)" }}
+                  >
+                    {slide.item ? (
+                      <ItemImage item={slide.item} blurred={Boolean(slide.blurred)} />
+                    ) : (
+                      <img
+                        src={slide.src}
+                        alt={slide.alt}
+                        draggable={false}
+                        className={`h-full w-full select-none object-cover ${slide.blurred ? "blur-md scale-105" : ""}`}
+                      />
+                    )}
+
+                    {slide.blurred && (
+                      <div className="absolute inset-0 bg-white/35 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#33B8C8] text-white text-xs font-medium shadow-sm">
+                          <Icon name="ShieldCheck" className="w-3.5 h-3.5 text-[#F8C12C]" />
+                          Privacy Protected
+                        </div>
+                        <p className="text-[11px] text-[#0b4757] font-medium mt-2">
+                          Verify ownership to reveal details
+                        </p>
+                      </div>
+                    )}
+
+                    {slide.item && (
+                      <>
+                        <div className="absolute top-3 left-3">
+                          <span className="font-mono-id text-[11px] font-medium px-2.5 py-1 rounded-md bg-white/95 border border-[#9CE5EC] text-[#0b4757]">
+                            #{slide.item.id}
+                          </span>
+                        </div>
+                        <div className="absolute top-3 right-3">
+                          <StatusBadge status={slide.item.status} isFlagged={slide.item.isFlagged} />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {showNavigation && count > 1 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Previous slide"
+                  onClick={() => nudge(-1)}
+                  className="tactile-btn absolute left-2 sm:left-4 top-1/2 z-[200] -translate-y-1/2 rounded-full border border-[#9CE5EC] bg-white/85 p-2.5 text-[#0b4757] backdrop-blur shadow-md hover:bg-white cursor-pointer"
+                >
+                  <Icon name="ChevronLeft" className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Next slide"
+                  onClick={() => nudge(1)}
+                  className="tactile-btn absolute right-2 sm:right-4 top-1/2 z-[200] -translate-y-1/2 rounded-full border border-[#9CE5EC] bg-white/85 p-2.5 text-[#0b4757] backdrop-blur shadow-md hover:bg-white cursor-pointer"
+                >
+                  <Icon name="ChevronRight" className="w-5 h-5" />
+                </button>
+              </>
+            )}
+          </div>
+
+          {showCaption && active && (
+            <div key={selected} className="mt-2 flex flex-col items-center px-6 text-center">
+              <p className="font-display text-base font-semibold tracking-tight text-[#0b4757]">
+                {active.title}
+              </p>
+              {active.subtitle && (
+                <p className="mt-1 text-xs text-[#33B8C8]">
+                  {active.subtitle}
+                </p>
+              )}
+              {active.meta && active.meta.length > 0 && (
+                <dl className="mt-4 w-full max-w-[260px] text-xs divide-y divide-[#9CE5EC]/50 rounded-2xl border border-[#9CE5EC]/70 bg-white/80 px-4 py-1.5 backdrop-blur-sm">
+                  {active.meta.map((row) => (
+                    <div key={row.label} className="flex justify-between py-1.5 gap-3">
+                      <dt className="text-[#33B8C8]">{row.label}</dt>
+                      <dd className="font-medium text-[#0b4757] text-right truncate">{row.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {active.actionNode && (
+                <div className="mt-4 w-full max-w-[260px]">
+                  {active.actionNode}
+                </div>
+              )}
+            </div>
+          )}
+
+          {showPagination && count > 1 && (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  aria-label={`Go to slide ${index + 1}`}
+                  aria-current={index === selected}
+                  onClick={() => goTo(index)}
+                  className={`h-2 rounded-full transition-all cursor-pointer ${
+                    index === selected ? "w-6 bg-[#0b4757]" : "w-2 bg-[#33B8C8]/40 hover:bg-[#33B8C8]"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     function ItemImage({ item, blurred }) {
       const candidates = useMemo(() => getImageCandidates(item.imageUrl), [item.imageUrl]);
       const [idx, setIdx] = useState(0);
@@ -3614,7 +3951,7 @@ void main(void) {
                     </div>
                   </div>
 
-                  {/* Clean Bento Grid */}
+                  {/* Coverflow Carousel Public Item Feed */}
                   {filteredItems.length === 0 ? (
                     <div className="py-16 text-center rounded-2xl border border-[#9CE5EC] bg-[#9CE5EC]/20">
                       <p className="text-sm font-medium text-[#0b4757]">No items match your filters.</p>
@@ -3626,8 +3963,8 @@ void main(void) {
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {filteredItems.map((item) => {
+                    (() => {
+                      const coverflowSlides = filteredItems.map((item) => {
                         const itemKey = item.rawId || item.id;
                         const myEmail = (currentUser?.email || '').toLowerCase();
                         const myClaim = myEmail
@@ -3639,7 +3976,8 @@ void main(void) {
                           (Boolean(myEmail) && myEmail === (item.reporterEmail || '').toLowerCase()) ||
                           currentUser?.role === 'admin';
                         const isMasked = !isVerifiedForViewer;
-                        const footerNode = item.status === 'Found' ? (
+
+                        const actionNode = item.status === 'Found' ? (
                           <button
                             onClick={() => openVerifyChallenge(item)}
                             className={`tactile-btn w-full h-9 rounded-xl text-xs font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer ${
@@ -3673,20 +4011,40 @@ void main(void) {
                             Returned to Owner
                           </div>
                         );
-                        return (
-                          <UiverseItemCard
-                            key={item.id}
-                            item={item}
-                            blurred={isMasked}
-                            footer={footerNode}
-                            onCardClick={() => {
+
+                        return {
+                          id: itemKey,
+                          item,
+                          blurred: isMasked,
+                          title: isMasked ? `Privacy Protected · #${item.id}` : item.title,
+                          subtitle: isMasked
+                            ? `${item.category} · Verify ownership to reveal details`
+                            : `${item.category} · ${item.brand !== 'Unspecified' ? item.brand : item.color}`,
+                          meta: [
+                            { label: 'Status', value: item.status },
+                            { label: 'Zone', value: item.zone },
+                            { label: 'Spot', value: isMasked ? 'Hidden until verified' : item.spot },
+                            { label: 'Reported', value: item.timestamp },
+                          ],
+                          actionNode,
+                        };
+                      });
+
+                      return (
+                        <div className="rounded-3xl border border-[#9CE5EC] bg-white/65 backdrop-blur-md py-4 sm:py-6">
+                          <CoverflowCarousel
+                            slides={coverflowSlides}
+                            showCaption
+                            showNavigation
+                            showPagination
+                            onSlideAction={(item) => {
                               if (item.status === 'Found') openVerifyChallenge(item);
                               else if (item.status === 'Lost') setActiveTab('matches');
                             }}
                           />
-                        );
-                      })}
-                    </div>
+                        </div>
+                      );
+                    })()
                   )}
                 </section>
               </>

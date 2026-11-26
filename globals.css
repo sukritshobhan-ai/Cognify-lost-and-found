@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 193 78% 19%;
+  --surface: 186 68% 77%;
+  --primary: 186 59% 49%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 186 68% 77%;
+  --secondary-foreground: 193 78% 19%;
+  --accent: 44 94% 57%;
+  --accent-foreground: 193 78% 19%;
+  --border: 186 68% 77%;
+  --ring: 186 59% 49%;
+}
+
+body {
+  font-family: "Google Sans", "Google Sans Flex", system-ui, -apple-system, sans-serif;
+  background-color: #ffffff;
+  color: #0b4757;
+}
+
+h1, h2, h3, h4 {
+  font-family: "Google Sans Flex", "Google Sans", system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
