@@ -3628,12 +3628,17 @@ void main(void) {
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {filteredItems.map((item) => {
-                        const isMasked = item.isSensitive && !item.privacyUnlocked && item.status === 'Found';
                         const itemKey = item.rawId || item.id;
                         const myEmail = (currentUser?.email || '').toLowerCase();
                         const myClaim = myEmail
                           ? claims.find((c) => c.item_id === itemKey && (c.claimant_email || '').toLowerCase() === myEmail)
                           : null;
+                        const isVerifiedForViewer =
+                          myClaim?.status === 'approved' ||
+                          item.status === 'Reunited' ||
+                          (Boolean(myEmail) && myEmail === (item.reporterEmail || '').toLowerCase()) ||
+                          currentUser?.role === 'admin';
+                        const isMasked = !isVerifiedForViewer;
                         const footerNode = item.status === 'Found' ? (
                           <button
                             onClick={() => openVerifyChallenge(item)}
