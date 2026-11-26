@@ -5628,5 +5628,22 @@ void main(void) {
 
     ReactDOM.createRoot(document.getElementById('root')).render(<CognifyApp />);
   </script>
+
+  <!-- Botpress Webchat Assistant -->
+  <link rel="stylesheet" href="https://vdk-viber-runtime-prod.bot.botpress.host/edge/webchat.css" />
+  <script src="https://vdk-viber-runtime-prod.bot.botpress.host/edge/webchat.js"></script>
+  <script>
+    fetch("https://vdk-viber-runtime-prod.bot.botpress.host/edge/bots/0fbeb6d8-4ae4-42dd-983f-6a6b51a22714/config")
+      .then((res) => res.json())
+      .then(({ webchat }) =>
+        VdkEdgeWebchat.mount({
+          ...webchat,
+          mode: "bubble",
+          baseUrl: "https://vdk-viber-runtime-prod.bot.botpress.host",
+          botId: "0fbeb6d8-4ae4-42dd-983f-6a6b51a22714"
+        })
+      )
+      .catch((err) => console.warn("Botpress webchat failed to load:", err));
+  </script>
 </body>
 </html>
